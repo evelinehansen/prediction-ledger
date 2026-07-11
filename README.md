@@ -35,3 +35,5 @@ then visit `http://localhost:8000`. Or use the GitHub Pages deployment.
 ## How calibration works
 
 Resolved predictions are grouped into confidence buckets (50 to 59, 60 to 69, 70 to 79, 80 to 89, 90 to 99). A bucket only renders once it holds 5 resolved predictions; until then it shows as a locked slot. Void resolutions (question turned out unjudgeable) are excluded from all statistics. All statistics are derived from the prediction list on the fly and never stored.
+
+A category filter appears above all three views once at least one prediction has a category. It narrows the ledger, the calibration statistics, and the history to that category; the same minimum-data rule applies, so a category's calibration only unlocks bucket by bucket as it earns 5 resolved predictions in a range.

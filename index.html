@@ -13,7 +13,7 @@
 
   <header class="app-header">
     <div class="header-row">
-      <h1 class="app-title">Prediction Ledger</h1>
+      <h1 class="app-title">Prediction<span class="app-title-accent">Ledger</span></h1>
       <div class="header-actions">
         <span id="backupNudge" class="backup-nudge" aria-live="polite"></span>
         <button id="exportBtn" class="btn ghost" type="button">Export</button>
@@ -31,6 +31,8 @@
   </header>
 
   <main class="app-main">
+
+    <div id="categoryFilter" class="filter-row cat-filter-row" role="group" aria-label="Filter by category" hidden></div>
 
     <!-- ============ Ledger view ============ -->
     <section id="view-ledger" role="tabpanel" aria-labelledby="tab-ledger">
@@ -56,6 +58,8 @@
         <h2 class="section-h">Open predictions</h2>
         <div id="openList" class="pred-list"></div>
       </section>
+
+      <p id="ledgerEmpty" class="muted-note" hidden></p>
 
     </section>
 

@@ -29,6 +29,7 @@ const $ = (id) => document.getElementById(id);
 let data = load();
 let activeView = "ledger";
 let historyFilter = "all";
+let categoryFilter = "all";
 let pendingImport = null;
 let revealedBuckets = loadRevealed();
 
@@ -121,6 +122,52 @@ function saveRevealed() {
   } catch { /* cosmetic only */ }
 }
 
+/* ---------- Category filter (applies to every view) ---------- */
+
+/* Distinct categories, case-insensitive, keeping the first-seen spelling. */
+function categoryList() {
+  const map = new Map();
+  for (const p of data.predictions) {
+    const c = (p.category || "").trim();
+    if (!c) continue;
+    const key = c.toLowerCase();
+    if (!map.has(key)) map.set(key, c);
+  }
+  return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+}
+
+function visiblePredictions() {
+  if (categoryFilter === "all") return data.predictions;
+  return data.predictions.filter(
+    (p) => (p.category || "").trim().toLowerCase() === categoryFilter
+  );
+}
+
+function renderCategoryFilter() {
+  const el = $("categoryFilter");
+  const cats = categoryList();
+  if (!cats.length) {
+    categoryFilter = "all";
+    el.hidden = true;
+    el.innerHTML = "";
+    return;
+  }
+  if (categoryFilter !== "all" && !cats.some(([key]) => key === categoryFilter)) {
+    categoryFilter = "all";
+  }
+  el.hidden = false;
+  el.innerHTML =
+    '<button class="chip' + (categoryFilter === "all" ? " active" : "") +
+      '" type="button" data-category="all">All categories</button>' +
+    cats
+      .map(
+        ([key, label]) =>
+          '<button class="chip' + (categoryFilter === key ? " active" : "") +
+            '" type="button" data-category="' + esc(key) + '">' + esc(label) + "</button>"
+      )
+      .join("");
+}
+
 /* ---------- Tabs ---------- */
 
 function switchView(view) {
@@ -174,7 +221,7 @@ function predCardHTML(p, { withResolve } = {}) {
 }
 
 function renderLedger() {
-  const open = openPredictions(data.predictions)
+  const open = openPredictions(visiblePredictions())
     .slice()
     .sort((a, b) => a.resolveBy.localeCompare(b.resolveBy) || a.created.localeCompare(b.created));
 
@@ -192,9 +239,12 @@ function renderLedger() {
   $("openSection").hidden = later.length === 0;
   $("openList").innerHTML = later.map((p) => predCardHTML(p)).join("");
 
-  const badge = $("dueBadge");
-  badge.hidden = dueNow.length === 0;
-  badge.textContent = dueNow.length;
+  const noneOpen = !isEmpty && open.length === 0;
+  $("ledgerEmpty").hidden = !noneOpen;
+  $("ledgerEmpty").textContent =
+    categoryFilter === "all"
+      ? "Nothing open right now. Everything is resolved."
+      : "No open predictions in this category.";
 
   if (isEmpty) renderStarters();
 }
@@ -244,7 +294,8 @@ function resolvePrediction(id, outcome, note) {
 /* ---------- Calibration view ---------- */
 
 function renderCalibration() {
-  const stats = overallStats(data.predictions);
+  const pool = visiblePredictions();
+  const stats = overallStats(pool);
   $("statOpen").textContent = stats.open;
   $("statResolved").textContent = stats.resolved;
   if (stats.hitRate === null) {
@@ -256,7 +307,7 @@ function renderCalibration() {
       "right " + stats.hits + " of " + stats.scorableCount + " times";
   }
 
-  const buckets = computeBuckets(data.predictions);
+  const buckets = computeBuckets(pool);
   const head = headline(buckets);
   const headEl = $("headlineStat");
   headEl.textContent = head.text;
@@ -346,8 +397,9 @@ function renderBuckets(buckets) {
           : b.gap >= 10
             ? '<span class="gap-sage">may be underconfident</span>'
             : '<span class="gap-sage">well calibrated</span>';
-      const fresh = !revealedBuckets.has(b.key);
-      if (fresh) { revealedBuckets.add(b.key); }
+      const revealKey = categoryFilter + ":" + b.key;
+      const fresh = !revealedBuckets.has(revealKey);
+      if (fresh) { revealedBuckets.add(revealKey); }
       return (
         '<div class="card bucket-card' + (fresh ? " revealed" : "") + '" data-tone="' + tone + '">' +
           '<span class="bucket-range">' + b.label + " percent</span>" +
@@ -363,7 +415,7 @@ function renderBuckets(buckets) {
 /* ---------- History view ---------- */
 
 function renderHistory() {
-  const resolved = resolvedPredictions(data.predictions)
+  const resolved = resolvedPredictions(visiblePredictions())
     .slice()
     .sort((a, b) => (b.resolution.resolvedOn || "").localeCompare(a.resolution.resolvedOn || ""));
 
@@ -391,7 +443,12 @@ function renderHistory() {
     })
     .join("");
 
-  $("historyEmpty").hidden = resolved.length > 0;
+  const emptyEl = $("historyEmpty");
+  emptyEl.hidden = filtered.length > 0;
+  emptyEl.textContent =
+    resolvedPredictions(data.predictions).length === 0
+      ? "Nothing resolved yet. Resolved predictions collect here."
+      : "Nothing resolved matches these filters.";
 }
 
 /* ---------- Detail modal ---------- */
@@ -567,13 +624,16 @@ function closeImport() {
 /* ---------- Render root ---------- */
 
 function render() {
+  renderCategoryFilter();
+
   if (activeView === "ledger") renderLedger();
   else if (activeView === "calibration") renderCalibration();
   else renderHistory();
 
-  // Due badge should be correct on every view.
+  // Due badge should be correct on every view and follow the category filter,
+  // so it always matches the due queue the Ledger tab would show.
   const today = todayStr();
-  const dueCount = openPredictions(data.predictions).filter(
+  const dueCount = openPredictions(visiblePredictions()).filter(
     (p) => p.resolveBy <= today
   ).length;
   const badge = $("dueBadge");
@@ -693,14 +753,22 @@ $("detailBody").addEventListener("click", (e) => {
 });
 
 /* History filter */
-document.querySelector(".filter-row").addEventListener("click", (e) => {
+document.querySelector("#view-history .filter-row").addEventListener("click", (e) => {
   const chip = e.target.closest(".chip");
   if (!chip) return;
   historyFilter = chip.dataset.filter;
-  for (const c of document.querySelectorAll(".filter-row .chip")) {
+  for (const c of document.querySelectorAll("#view-history .filter-row .chip")) {
     c.classList.toggle("active", c === chip);
   }
   renderHistory();
+});
+
+/* Category filter */
+$("categoryFilter").addEventListener("click", (e) => {
+  const chip = e.target.closest("[data-category]");
+  if (!chip) return;
+  categoryFilter = chip.dataset.category;
+  render();
 });
 
 /* Export / import */

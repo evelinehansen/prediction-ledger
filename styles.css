@@ -75,15 +75,16 @@ body {
   flex-wrap: wrap; gap: 0.5rem 1rem;
 }
 .app-title {
-  font-family: var(--serif);
-  font-weight: 600;
+  font-weight: 800;
   font-size: 1.5rem;
+  letter-spacing: -0.01em;
 }
+.app-title-accent { color: var(--sage); }
 .header-actions {
   display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
 }
 .backup-nudge { font-size: 0.8rem; color: var(--ink-soft); }
-.backup-nudge.stale { color: var(--clay-deep); font-weight: 600; }
+.backup-nudge.stale { color: var(--clay-deep); }
 
 .tabs {
   display: flex; gap: 0.25rem;
@@ -254,6 +255,14 @@ body {
 .chart-axis-label { font-size: 11px; fill: var(--ink-soft); font-family: var(--font); }
 .chart-tick { font-size: 10px; fill: var(--ink-faint); font-family: var(--font); }
 
+/* The SVG scales up with the page width, so its text needs smaller
+   nominal sizes on desktop to end up visually similar to mobile. */
+@media (min-width: 720px) {
+  .chart-axis-label { font-size: 8px; }
+  .chart-tick { font-size: 7px; }
+  .headline-stat { font-size: 1.05rem; }
+}
+
 .bucket-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -287,9 +296,10 @@ body {
   transition: width 0.6s var(--spring);
 }
 
-/* ============ History ============ */
+/* ============ Filter chips (history outcome, shared category row) ============ */
 
 .filter-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+.cat-filter-row { margin-bottom: 1.1rem; }
 .chip {
   font: inherit; font-weight: 600; font-size: 0.85rem;
   color: var(--ink-soft); background: var(--card);

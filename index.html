@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Prediction Ledger</title>
+  <meta name="description" content="Log small predictions about your own life and discover your personal calibration curve. Everything stays in your browser.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23647F5E'/%3E%3Cpath d='M22 74 L46 52 L62 62 L80 30' stroke='%23FFFFFF' stroke-width='9' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-row">
+      <h1 class="app-title">Prediction Ledger</h1>
+      <div class="header-actions">
+        <span id="backupNudge" class="backup-nudge" aria-live="polite"></span>
+        <button id="exportBtn" class="btn ghost" type="button">Export</button>
+        <button id="importBtn" class="btn ghost" type="button">Import</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button class="tab active" id="tab-ledger" type="button" role="tab" aria-selected="true" aria-controls="view-ledger" data-view="ledger">
+        Ledger <span id="dueBadge" class="tab-badge" hidden></span>
+      </button>
+      <button class="tab" id="tab-calibration" type="button" role="tab" aria-selected="false" aria-controls="view-calibration" data-view="calibration">Calibration</button>
+      <button class="tab" id="tab-history" type="button" role="tab" aria-selected="false" aria-controls="view-history" data-view="history">History</button>
+    </nav>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ============ Ledger view ============ -->
+    <section id="view-ledger" role="tabpanel" aria-labelledby="tab-ledger">
+
+      <div id="emptyState" class="card empty-state" hidden>
+        <h2 class="empty-title">Predict. Resolve. Learn.</h2>
+        <p>Log a small prediction about your own life with how sure you are.</p>
+        <p>When its date arrives, record what actually happened. If a question turns out unjudgeable, resolve it as void (voids never count against you).</p>
+        <p>Over time, your personal calibration curve shows whether your confidence means anything.</p>
+        <button id="emptyAddBtn" class="btn primary" type="button">Add your first prediction</button>
+        <div class="starter-block">
+          <p class="section-h">Or start from an example</p>
+          <div id="starterList" class="starter-list"></div>
+        </div>
+      </div>
+
+      <section id="dueSection" hidden>
+        <h2 class="section-h due-header">Due for resolution</h2>
+        <div id="dueList" class="pred-list"></div>
+      </section>
+
+      <section id="openSection" hidden>
+        <h2 class="section-h">Open predictions</h2>
+        <div id="openList" class="pred-list"></div>
+      </section>
+
+    </section>
+
+    <!-- ============ Calibration view ============ -->
+    <section id="view-calibration" role="tabpanel" aria-labelledby="tab-calibration" hidden>
+
+      <div class="counters">
+        <div class="card counter">
+          <span id="statOpen" class="counter-num">0</span>
+          <span class="counter-label">open</span>
+        </div>
+        <div class="card counter">
+          <span id="statResolved" class="counter-num">0</span>
+          <span class="counter-label">resolved</span>
+        </div>
+        <div class="card counter">
+          <span id="statHitRate" class="counter-num">–</span>
+          <span class="counter-label" id="statHitRateLabel">hit rate</span>
+        </div>
+      </div>
+
+      <div class="card calibration-card">
+        <p id="headlineStat" class="headline-stat"></p>
+        <div id="chartWrap" class="chart-wrap"></div>
+      </div>
+
+      <h2 class="section-h">Confidence ranges</h2>
+      <div id="bucketList" class="bucket-list"></div>
+
+    </section>
+
+    <!-- ============ History view ============ -->
+    <section id="view-history" role="tabpanel" aria-labelledby="tab-history" hidden>
+      <div class="filter-row" role="group" aria-label="Filter by outcome">
+        <button class="chip active" type="button" data-filter="all">All</button>
+        <button class="chip" type="button" data-filter="happened">Happened</button>
+        <button class="chip" type="button" data-filter="didnt">Didn't</button>
+        <button class="chip" type="button" data-filter="void">Void</button>
+      </div>
+      <div id="historyList" class="pred-list"></div>
+      <p id="historyEmpty" class="muted-note" hidden>Nothing resolved yet. Resolved predictions collect here.</p>
+    </section>
+
+  </main>
+
+  <button id="addBtn" class="btn primary fab" type="button" hidden>New prediction</button>
+
+  <!-- ============ Entry form: side panel on desktop, bottom sheet on mobile ============ -->
+  <div id="sheetBackdrop" class="modal-backdrop" hidden></div>
+  <aside id="entrySheet" class="entry-sheet" role="dialog" aria-modal="true" aria-labelledby="entryTitle" hidden>
+    <div class="sheet-grip" aria-hidden="true"></div>
+    <h2 id="entryTitle" class="sheet-title">New prediction</h2>
+    <form id="entryForm" novalidate>
+      <label class="field">
+        <span class="field-label">Statement</span>
+        <textarea id="fStatement" rows="2" required
+          placeholder="I will finish the report by Friday"></textarea>
+      </label>
+      <button id="flipBtn" class="btn ghost flip-btn" type="button">
+        Flip it (you think it won't happen)
+      </button>
+
+      <div class="field">
+        <span class="field-label">Confidence</span>
+        <output id="confLabel" class="conf-label" for="fConfidence">75 percent sure</output>
+        <input type="range" id="fConfidence" min="1" max="99" step="1" value="75"
+          aria-label="Confidence percent">
+        <p id="confHint" class="conf-hint" hidden>
+          Below 50 percent means you think it will not happen. Tap flip it and the
+          statement and confidence swap to say the same thing the right way up.
+        </p>
+      </div>
+
+      <label class="field">
+        <span class="field-label">Resolve by</span>
+        <input type="date" id="fResolveBy" required>
+      </label>
+
+      <div class="field-pair">
+        <label class="field">
+          <span class="field-label">Category <em>(optional)</em></span>
+          <input type="text" id="fCategory" placeholder="work, health, …" autocomplete="off">
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field-label">Notes <em>(optional)</em></span>
+        <textarea id="fNotes" rows="2" placeholder="Your reasoning right now"></textarea>
+      </label>
+
+      <p id="formError" class="form-error" role="alert" hidden></p>
+
+      <div class="sheet-actions">
+        <button id="cancelEntryBtn" class="btn ghost" type="button">Cancel</button>
+        <button id="saveEntryBtn" class="btn primary" type="submit">Save prediction</button>
+      </div>
+    </form>
+  </aside>
+
+  <!-- ============ Detail modal ============ -->
+  <div id="detailBackdrop" class="modal-backdrop" hidden></div>
+  <div id="detailModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="detailStatement" hidden>
+    <div id="detailBody"></div>
+  </div>
+
+  <!-- ============ Import choice modal ============ -->
+  <div id="importBackdrop" class="modal-backdrop" hidden></div>
+  <div id="importModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="importTitle" hidden>
+    <h2 id="importTitle" class="modal-title">Import ledger</h2>
+    <p id="importSummary"></p>
+    <div class="modal-actions">
+      <button id="importCancelBtn" class="btn ghost" type="button">Cancel</button>
+      <button id="importMergeBtn" class="btn" type="button">Merge</button>
+      <button id="importReplaceBtn" class="btn danger" type="button">Replace everything</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

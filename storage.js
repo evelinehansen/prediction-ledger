@@ -7,8 +7,29 @@
 
 export const SCHEMA_VERSION = 1;
 
-const DATA_KEY = "predictionLedger.data.v1";
-const BACKUP_KEY = "predictionLedger.lastBackup";
+const DATA_KEY = "prediction-ledger:v1";
+const BACKUP_KEY = "prediction-ledger:backup";
+
+/*
+ * The keys used before the family naming convention. On first load after
+ * the rename, each value is copied to its new key; the old keys are left
+ * in place untouched so the previous version still works as a rollback.
+ */
+const OLD_DATA_KEY = "predictionLedger.data.v1";
+const OLD_BACKUP_KEY = "predictionLedger.lastBackup";
+
+function migrateKey(newKey, oldKey) {
+  try {
+    if (localStorage.getItem(newKey) !== null) return;
+    const old = localStorage.getItem(oldKey);
+    if (old !== null) localStorage.setItem(newKey, old);
+  } catch {
+    /* quota or private mode: load() falls back to a fresh ledger */
+  }
+}
+
+migrateKey(DATA_KEY, OLD_DATA_KEY);
+migrateKey(BACKUP_KEY, OLD_BACKUP_KEY);
 
 export function newLedger() {
   const now = new Date().toISOString();

@@ -17,13 +17,13 @@
       <h1 class="app-title">Prediction<span class="app-title-accent">Ledger</span></h1>
       <div class="header-actions">
         <span id="backupNudge" class="backup-nudge" aria-live="polite"></span>
-        <button id="exportBtn" class="btn ghost" type="button">Export</button>
-        <button id="importBtn" class="btn ghost" type="button">Import</button>
+        <button id="exportBtn" class="btn" type="button">Export</button>
+        <button id="importBtn" class="btn" type="button">Import</button>
         <input type="file" id="importFile" accept=".json,application/json" hidden>
       </div>
     </div>
     <nav class="tabs" role="tablist" aria-label="Views">
-      <button class="tab active" id="tab-ledger" type="button" role="tab" aria-selected="true" aria-controls="view-ledger" data-view="ledger">
+      <button class="tab" id="tab-ledger" type="button" role="tab" aria-selected="true" aria-controls="view-ledger" data-view="ledger">
         Ledger <span id="dueBadge" class="tab-badge" hidden></span>
       </button>
       <button class="tab" id="tab-calibration" type="button" role="tab" aria-selected="false" aria-controls="view-calibration" data-view="calibration">Calibration</button>
@@ -95,7 +95,7 @@
     <!-- ============ History view ============ -->
     <section id="view-history" role="tabpanel" aria-labelledby="tab-history" hidden>
       <div class="filter-row" role="group" aria-label="Filter by outcome">
-        <button class="chip active" type="button" data-filter="all">All</button>
+        <button class="chip selected" type="button" data-filter="all">All</button>
         <button class="chip" type="button" data-filter="happened">Happened</button>
         <button class="chip" type="button" data-filter="didnt">Didn't</button>
         <button class="chip" type="button" data-filter="void">Void</button>

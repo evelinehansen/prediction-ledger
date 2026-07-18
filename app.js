@@ -157,12 +157,12 @@ function renderCategoryFilter() {
   }
   el.hidden = false;
   el.innerHTML =
-    '<button class="chip' + (categoryFilter === "all" ? " active" : "") +
+    '<button class="chip' + (categoryFilter === "all" ? " selected" : "") +
       '" type="button" data-category="all">All categories</button>' +
     cats
       .map(
         ([key, label]) =>
-          '<button class="chip' + (categoryFilter === key ? " active" : "") +
+          '<button class="chip' + (categoryFilter === key ? " selected" : "") +
             '" type="button" data-category="' + esc(key) + '">' + esc(label) + "</button>"
       )
       .join("");
@@ -173,9 +173,7 @@ function renderCategoryFilter() {
 function switchView(view) {
   activeView = view;
   for (const tab of document.querySelectorAll(".tab")) {
-    const on = tab.dataset.view === view;
-    tab.classList.toggle("active", on);
-    tab.setAttribute("aria-selected", String(on));
+    tab.setAttribute("aria-selected", String(tab.dataset.view === view));
   }
   $("view-ledger").hidden = view !== "ledger";
   $("view-calibration").hidden = view !== "calibration";
@@ -576,11 +574,6 @@ function renderBackupNudge() {
   const el = $("backupNudge");
   const days = daysSinceBackup();
   const hasData = data.predictions.length > 0;
-  if (!hasData && days === null) {
-    el.textContent = "";
-    el.classList.remove("stale");
-    return;
-  }
   let text;
   if (days === null) text = "Last backup: never";
   else if (days === 0) text = "Last backup: today";
@@ -758,7 +751,7 @@ document.querySelector("#view-history .filter-row").addEventListener("click", (e
   if (!chip) return;
   historyFilter = chip.dataset.filter;
   for (const c of document.querySelectorAll("#view-history .filter-row .chip")) {
-    c.classList.toggle("active", c === chip);
+    c.classList.toggle("selected", c === chip);
   }
   renderHistory();
 });

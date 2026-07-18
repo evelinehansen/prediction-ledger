@@ -100,7 +100,7 @@ body {
   transition: color 0.2s, border-color 0.2s;
 }
 .tab:hover { color: var(--ink); }
-.tab.active { color: var(--sage-deep); border-bottom-color: var(--sage); }
+.tab[aria-selected="true"] { color: var(--sage-deep); border-bottom-color: var(--sage); }
 .tab-badge {
   display: inline-block;
   min-width: 1.35em; padding: 0 0.35em;
@@ -302,13 +302,17 @@ body {
 .cat-filter-row { margin-bottom: 1.1rem; }
 .chip {
   font: inherit; font-weight: 600; font-size: 0.85rem;
-  color: var(--ink-soft); background: var(--card);
+  color: var(--ink); background: var(--card);
   border: 1px solid var(--line); border-radius: 999px;
-  padding: 0.35rem 0.9rem; min-height: 44px; cursor: pointer;
+  padding: 0.4rem 0.9rem; min-height: 44px; cursor: pointer;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 .chip:hover { border-color: var(--ink-faint); }
-.chip.active { background: var(--sage-tint); border-color: var(--sage); color: var(--sage-deep); }
+.chip.selected {
+  background: var(--sage-tint);
+  border-color: var(--sage);
+  color: var(--sage-deep);
+}
 
 /* ============ Floating add button ============ */
 
